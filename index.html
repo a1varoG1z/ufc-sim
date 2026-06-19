@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>UFC Owner Sim</title>
+<style>
+  :root{
+    --bg:#0c0d10; --bg2:#15171c; --bg3:#1d2027; --line:#2a2e38;
+    --red:#d7263d; --red2:#a81f31; --gold:#e3b341; --green:#3fbf6f; --blue:#4d9de0;
+    --txt:#e9e9ee; --txt2:#9aa0ad; --txt3:#666c79;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  body{padding-bottom:64px;}
+  h1,h2,h3,h4{margin:.3em 0; font-weight:700;}
+  h1{font-size:1.3rem} h2{font-size:1.1rem} h3{font-size:1rem} h4{font-size:.9rem;color:var(--txt2)}
+  a{color:var(--blue)}
+  .topbar{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--bg2),var(--bg2) 90%,transparent);
+    padding:10px 12px 6px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .topbar .brand{font-weight:800;letter-spacing:.5px;color:var(--red)}
+  .topbar .date{font-size:.8rem;color:var(--txt2)}
+  .container{padding:10px 10px 90px}
+  .card{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+  .card.tight{padding:8px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .row > *{flex:1}
+  .btn{display:inline-block;background:var(--bg3);border:1px solid var(--line);color:var(--txt);
+    padding:9px 12px;border-radius:9px;font-size:.85rem;cursor:pointer;text-align:center;user-select:none}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--red);border-color:var(--red2);color:#fff;font-weight:700}
+  .btn.green{background:#1f3d2c;border-color:var(--green);color:var(--green)}
+  .btn.gold{background:#3a2f12;border-color:var(--gold);color:var(--gold)}
+  .btn.small{padding:5px 9px;font-size:.75rem}
+  .btn.full{width:100%}
+  .btn.danger{background:#3a1414;border-color:var(--red);color:#ff8a8a}
+  .btn[disabled]{opacity:.35;pointer-events:none}
+  input,select,textarea{background:var(--bg3);border:1px solid var(--line);color:var(--txt);border-radius:8px;
+    padding:8px;font-size:.85rem;width:100%;margin:3px 0;font-family:inherit}
+  label{font-size:.75rem;color:var(--txt2);display:block;margin-top:6px}
+  table{width:100%;border-collapse:collapse;font-size:.8rem}
+  th,td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+  th{color:var(--txt2);font-weight:600;font-size:.72rem;text-transform:uppercase}
+  tr.clickable{cursor:pointer}
+  tr.clickable:active{background:var(--bg3)}
+  .pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.7rem;font-weight:700;background:var(--bg3);border:1px solid var(--line)}
+  .pill.champ{background:#3a2f12;color:var(--gold);border-color:var(--gold)}
+  .pill.interim{background:#2a2640;color:#b79bff;border-color:#7d5fff}
+  .pill.retired{background:#2a2a2a;color:#888}
+  .pill.injured{background:#3a1414;color:#ff8a8a;border-color:#b44}
+  .pill.hof{background:#102a3a;color:#6fc8ff;border-color:#3a7da8}
+  .muted{color:var(--txt2);font-size:.78rem}
+  .tabs{display:flex;overflow-x:auto;gap:6px;padding:8px 10px;background:var(--bg2);border-bottom:1px solid var(--line);
+    position:sticky;top:46px;z-index:19}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto;padding:7px 12px;border-radius:99px;background:var(--bg3);font-size:.78rem;white-space:nowrap;border:1px solid var(--line)}
+  .tab.active{background:var(--red);border-color:var(--red2);color:#fff;font-weight:700}
+  .statbar{height:6px;border-radius:99px;background:var(--bg3);overflow:hidden;margin-top:2px}
+  .statbar i{display:block;height:100%;background:var(--blue)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .fightcard-item{border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:6px;background:var(--bg3)}
+  .vs{font-weight:800;color:var(--red);text-align:center;font-size:.75rem}
+  .log{font-size:.78rem;color:var(--txt2);max-height:220px;overflow-y:auto;border-top:1px solid var(--line);padding-top:6px}
+  .log div{margin-bottom:4px}
+  .closebtn{position:absolute;top:10px;right:10px}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:flex;align-items:flex-end}
+  .modal{background:var(--bg2);width:100%;max-height:88vh;overflow-y:auto;border-radius:16px 16px 0 0;padding:14px;position:relative;border-top:1px solid var(--line)}
+  .badge-row{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0}
+  .section-title{display:flex;justify-content:space-between;align-items:center}
+  textarea.code{font-family:monospace;font-size:.72rem;min-height:300px;white-space:pre}
+  .toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--gold);
+    padding:8px 14px;border-radius:10px;font-size:.8rem;z-index:99;max-width:90vw;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">🥊 UFC OWNER SIM</div>
+  <div class="date" id="topDate">--</div>
+</div>
+<div class="tabs" id="tabs"></div>
+<div class="container" id="app"></div>
+<div id="modalRoot"></div>
+
+<script>
+/* ====================== CONFIG / CONSTANTES ====================== */
+const DIVISIONS = [
+  {id:'W_STRAW', name:'Peso Paja', gender:'F', limit:115},
+  {id:'W_FLY',    name:'Peso Mosca', gender:'F', limit:125},
+  {id:'W_BANTAM', name:'Peso Gallo', gender:'F', limit:135},
+  {id:'W_FEATHER',name:'Peso Pluma', gender:'F', limit:145},
+  {id:'M_FLY',    name:'Peso Mosca', gender:'M', limit:125},
+  {id:'M_BANTAM', name:'Peso Gallo', gender:'M', limit:135},
+  {id:'M_FEATHER',name:'Peso Pluma', gender:'M', limit:145},
+  {id:'M_LIGHT',  name:'Peso Ligero', gender:'M', limit:155},
+  {id:'M_WELTER', name:'Peso Wélter', gender:'M', limit:170},
+  {id:'M_MIDDLE', name:'Peso Medio', gender:'M', limit:185},
+  {id:'M_LHEAVY', name:'Semipesado', gender:'M', limit:205},
+  {id:'M_HEAVY',  name:'Peso Pesado', gender:'M', limit:265},
+];
+const STAT_KEYS = [
+  ['power','Potencia'],['striking','Técnica Striking'],['wrestlingOff','Wrestling Of.'],
+  ['wrestlingDef','Wrestling Def.'],['ground','Suelo / BJJ'],['cardio','Resistencia/Energía'],['chin','Resist. Golpes']
+];
+const FIRST_M=['Marcus','Diego','Igor','Kai','Tomas','Andrei','Lucas','Rafael','Jonas','Mateus','Viktor','Sean','Bruno','Caleb','Hiroshi','Connor','Dmitri','Yusuf','Pedro','Aleksander','Niko','Owen','Tyrell','Bjorn'];
+const FIRST_F=['Elena','Maya','Sofia','Iris','Anya','Camila','Nora','Yuki','Talia','Bianca','Lena','Priya','Renata','Aiko','Mireia','Karla','Olga','Selin','Wren','Daria'];
+const LAST=['Reyes','Volkov','Hayes','Nakamura','Silva','Petrov','Costa','Okafor','Brennan','Ibrahim','Castillo','Kovac','Lindgren','Moreau','Adesanya-Smith','Tanaka','Duarte','Walsh','Esparza','Brandt','Olsen','Mendes','Sato','Cruz','Kowalski','Diallo'];
+const COUNTRIES=['EE.UU.','Brasil','Rusia','Irlanda','Nigeria','Japón','Polonia','México','Kazajistán','Suecia','Inglaterra','Canadá','Australia','Georgia','Países Bajos','Marruecos','Cuba','Corea del Sur','Francia','Croacia'];
+const NICK_POOL=['"El Huracán"','"Relámpago"','"El Carnicero"','"Sombra"','"El Mago"','"Tormenta"','"El Predicador"','"Fantasma"','"El Toro"','"Lobo"','"El Cirujano"','"Caos"','"El Asesino Silencioso"','"Rey"','"La Roca"','"El Implacable"',null,null,null];
+
+const LS_KEY='ufc_owner_sim_state_v1';
+const LS_CFG='ufc_owner_sim_github_cfg_v1';
+
+/* ====================== UTILIDADES ====================== */
+function uid(p){return p+'_'+Math.random().toString(36).slice(2,9);}
+function rand(min,max){return Math.random()*(max-min)+min;}
+function randi(min,max){return Math.floor(rand(min,max+1));}
+function pick(arr){return arr[randi(0,arr.length-1)];}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function fmtDate(d){ if(!d) return '-'; const dt=new Date(d); return dt.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});}
+function addDays(dateStr,days){ const d=new Date(dateStr); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10);}
+function ageFromDob(dob, ref){ const a=new Date(ref); const b=new Date(dob); let age=a.getFullYear()-b.getFullYear(); const m=a.getMonth()-b.getMonth(); if(m<0||(m===0&&a.getDate()<b.getDate())) age--; return age;}
+function toast(msg,ms=2400){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),ms);}
+function divName(id){ const d=DIVISIONS.find(x=>x.id===id); return d? (d.gender==='F'?'♀ ':'♂ ')+d.name : id; }
+
+/* ====================== ESTADO GLOBAL ====================== */
+let STATE = null;
+let UI = {tab:'dashboard', rosterFilter:'ALL', rosterSearch:'', selectedFighter:null, newEventCard:[], newEventDivFilter:'ALL'};
+
+function freshState(){
+  return {
+    meta:{ currentDate: '2026-01-15', eventSeq:1, fightSeq:1, leagueName:'UFC' },
+    divisions: DIVISIONS.map(d=>({...d, championId:null, interimChampionId:null})),
+    titles: [], // {id,name,divisionId,holderId,isInterim,history:[{fighterId,wonEventId,wonDate,lostEventId,lostDate,defenses}]}
+    fighters: [],
+    events: [],
+    log: []
+  };
+}
+
+function logEvent(msg){
+  STATE.log.unshift({date:STATE.meta.currentDate, msg});
+  if(STATE.log.length>400) STATE.log.length=400;
+}
+
+/* ====================== GENERACIÓN DE PELEADORES SEED ====================== */
+function makeFighter(divisionId, gender){
+  const first = gender==='F'? pick(FIRST_F): pick(FIRST_M);
+  const last = pick(LAST);
+  const age = randi(22,33);
+  const dob = `${2026-age}-${String(randi(1,12)).padStart(2,'0')}-${String(randi(1,28)).padStart(2,'0')}`;
+  const debutYearsAgo = randi(2,9);
+  const debut = `${2026-debutYearsAgo}-0${randi(1,9)}-1${randi(0,9)}`;
+  const stats = {};
+  STAT_KEYS.forEach(([k])=> stats[k]=randi(45,88));
+  // un par de fighters con algo de tope alto para que el roster tenga variedad
+  if(Math.random()<0.3){ const boost=pick(STAT_KEYS)[0]; stats[boost]=clamp(stats[boost]+randi(8,14),1,99); }
+  return {
+    id: uid('F'),
+    name: `${first} ${last}`,
+    nickname: pick(NICK_POOL),
+    gender, country: pick(COUNTRIES),
+    dob, debut,
+    division: divisionId,
+    stats,
+    longevity: randi(82,100),
+    status:'active', // active | retired | injured
+    injury:{active:false, untilDate:null, note:''},
+    record:{wins:0,losses:0,draws:0,nc:0,koWins:0,subWins:0,decWins:0,koLosses:0,subLosses:0,decLosses:0},
+    bonuses:{fightOfNight:0, performanceOfNight:0},
+    titleReigns:[], // {titleId, wonDate, lostDate, defenses}
+    fightHistory:[], // fightIds
+    lastEventSeq:null,
+    hof:false,
+    rankScore:0
+  };
+}
+
+const REAL_FIGHTERS = [
+ // ===== HEAVYWEIGHT =====
+ {name:'Jon Jones', nickname:'"Bones"', division:'M_HEAVY', gender:'M', country:'EE.UU.', dob:'1987-07-19', debut:'2008-04-12', status:'retired', tier:'legend'},
+ {name:'Stipe Miocic', nickname:null, division:'M_HEAVY', gender:'M', country:'EE.UU.', dob:'1982-08-19', debut:'2010-10-01', status:'retired', tier:'legend'},
+ {name:'Daniel Cormier', nickname:'"DC"', division:'M_HEAVY', gender:'M', country:'EE.UU.', dob:'1979-03-20', debut:'2009-09-19', status:'retired', tier:'legend'},
+ {name:'Cain Velasquez', nickname:null, division:'M_HEAVY', gender:'M', country:'EE.UU.', dob:'1982-07-28', debut:'2006-10-28', status:'retired', tier:'legend'},
+ {name:'Brock Lesnar', nickname:null, division:'M_HEAVY', gender:'M', country:'EE.UU.', dob:'1977-07-12', debut:'2007-06-02', status:'retired', tier:'legend'},
+ {name:'Fabricio Werdum', nickname:'"Vai Cavalo"', division:'M_HEAVY', gender:'M', country:'Brasil', dob:'1977-07-30', debut:'2008-04-19', status:'retired', tier:'veteran'},
+ {name:'Junior Dos Santos', nickname:'"Cigano"', division:'M_HEAVY', gender:'M', country:'Brasil', dob:'1984-04-13', debut:'2008-08-09', status:'retired', tier:'legend'},
+ {name:'Tom Aspinall', nickname:null, division:'M_HEAVY', gender:'M', country:'Inglaterra', dob:'1993-02-11', debut:'2020-07-11', status:'active', tier:'elite'},
+ {name:'Ciryl Gane', nickname:'"Bon Gamin"', division:'M_HEAVY', gender:'M', country:'Francia', dob:'1990-01-12', debut:'2019-09-21', status:'active', tier:'elite'},
+ {name:'Sergei Pavlovich', nickname:null, division:'M_HEAVY', gender:'M', country:'Rusia', dob:'1991-12-08', debut:'2018-10-26', status:'active', tier:'contender'},
+ {name:'Curtis Blaydes', nickname:null, division:'M_HEAVY', gender:'M', country:'EE.UU.', dob:'1991-04-18', debut:'2016-06-18', status:'active', tier:'contender'},
+ {name:'Alexander Volkov', nickname:'"Drago"', division:'M_HEAVY', gender:'M', country:'Rusia', dob:'1988-08-24', debut:'2016-09-10', status:'active', tier:'contender'},
+
+ // ===== LIGHT HEAVYWEIGHT =====
+ {name:'Alex Pereira', nickname:'"Poatan"', division:'M_LHEAVY', gender:'M', country:'Brasil', dob:'1987-07-07', debut:'2021-11-06', status:'active', tier:'elite'},
+ {name:'Jiri Prochazka', nickname:'"Denisa"', division:'M_LHEAVY', gender:'M', country:'Rep. Checa', dob:'1992-10-14', debut:'2020-02-29', status:'active', tier:'elite'},
+ {name:'Jan Blachowicz', nickname:null, division:'M_LHEAVY', gender:'M', country:'Polonia', dob:'1983-08-24', debut:'2009-09-19', status:'active', tier:'veteran'},
+ {name:'Magomed Ankalaev', nickname:null, division:'M_LHEAVY', gender:'M', country:'Rusia', dob:'1992-06-02', debut:'2018-11-30', status:'active', tier:'elite'},
+ {name:'Glover Teixeira', nickname:null, division:'M_LHEAVY', gender:'M', country:'Brasil', dob:'1979-10-28', debut:'2012-05-05', status:'retired', tier:'legend'},
+ {name:'Mauricio Rua', nickname:'"Shogun"', division:'M_LHEAVY', gender:'M', country:'Brasil', dob:'1981-11-25', debut:'2005-05-05', status:'retired', tier:'legend'},
+ {name:'Lyoto Machida', nickname:'"The Dragon"', division:'M_LHEAVY', gender:'M', country:'Brasil', dob:'1978-10-30', debut:'2003-03-08', status:'retired', tier:'legend'},
+ {name:'Rampage Jackson', nickname:'"Rampage"', division:'M_LHEAVY', gender:'M', country:'EE.UU.', dob:'1978-06-23', debut:'2001-08-25', status:'retired', tier:'legend'},
+
+ // ===== MIDDLEWEIGHT =====
+ {name:'Israel Adesanya', nickname:'"The Last Stylebender"', division:'M_MIDDLE', gender:'M', country:'Nigeria', dob:'1989-07-22', debut:'2018-02-10', status:'active', tier:'elite'},
+ {name:'Dricus Du Plessis', nickname:'"Stillknocks"', division:'M_MIDDLE', gender:'M', country:'Sudáfrica', dob:'1994-02-14', debut:'2020-09-05', status:'active', tier:'elite'},
+ {name:'Sean Strickland', nickname:'"Tarzan"', division:'M_MIDDLE', gender:'M', country:'EE.UU.', dob:'1991-03-27', debut:'2014-05-10', status:'active', tier:'elite'},
+ {name:'Robert Whittaker', nickname:'"The Reaper"', division:'M_MIDDLE', gender:'M', country:'Australia', dob:'1990-12-20', debut:'2012-02-26', status:'active', tier:'elite'},
+ {name:'Anderson Silva', nickname:'"The Spider"', division:'M_MIDDLE', gender:'M', country:'Brasil', dob:'1975-04-14', debut:'2006-06-28', status:'retired', tier:'legend'},
+ {name:'Chael Sonnen', nickname:null, division:'M_MIDDLE', gender:'M', country:'EE.UU.', dob:'1977-04-03', debut:'2005-03-04', status:'retired', tier:'veteran'},
+ {name:'Michael Bisping', nickname:'"The Count"', division:'M_MIDDLE', gender:'M', country:'Inglaterra', dob:'1979-02-28', debut:'2006-09-23', status:'retired', tier:'legend'},
+ {name:'Vitor Belfort', nickname:'"The Phenom"', division:'M_MIDDLE', gender:'M', country:'Brasil', dob:'1977-04-01', debut:'1996-10-19', status:'retired', tier:'legend'},
+
+ // ===== WELTERWEIGHT =====
+ {name:'Kamaru Usman', nickname:'"The Nigerian Nightmare"', division:'M_WELTER', gender:'M', country:'Nigeria', dob:'1987-05-11', debut:'2012-03-03', status:'active', tier:'legend'},
+ {name:'Leon Edwards', nickname:'"Rocky"', division:'M_WELTER', gender:'M', country:'Inglaterra', dob:'1991-08-25', debut:'2014-12-13', status:'active', tier:'elite'},
+ {name:'Belal Muhammad', nickname:'"Remember The Name"', division:'M_WELTER', gender:'M', country:'EE.UU.', dob:'1990-06-09', debut:'2016-07-13', status:'active', tier:'elite'},
+ {name:'Shavkat Rakhmonov', nickname:'"Nomad"', division:'M_WELTER', gender:'M', country:'Kazajistán', dob:'1996-10-05', debut:'2019-10-04', status:'active', tier:'elite'},
+ {name:'Georges St-Pierre', nickname:'"GSP"', division:'M_WELTER', gender:'M', country:'Canadá', dob:'1981-05-19', debut:'2002-01-25', status:'retired', tier:'legend'},
+ {name:'Nick Diaz', nickname:null, division:'M_WELTER', gender:'M', country:'EE.UU.', dob:'1983-08-02', debut:'2001-08-25', status:'retired', tier:'legend'},
+ {name:'Robbie Lawler', nickname:'"Ruthless"', division:'M_WELTER', gender:'M', country:'EE.UU.', dob:'1982-03-20', debut:'2002-03-22', status:'retired', tier:'legend'},
+ {name:'Matt Hughes', nickname:null, division:'M_WELTER', gender:'M', country:'EE.UU.', dob:'1973-10-13', debut:'1998-09-24', status:'retired', tier:'legend'},
+ {name:'Tyron Woodley', nickname:'"The Chosen One"', division:'M_WELTER', gender:'M', country:'EE.UU.', dob:'1982-04-17', debut:'2009-06-06', status:'retired', tier:'veteran'},
+
+ // ===== LIGHTWEIGHT =====
+ {name:'Islam Makhachev', nickname:null, division:'M_LIGHT', gender:'M', country:'Rusia', dob:'1991-10-27', debut:'2015-03-14', status:'active', tier:'legend'},
+ {name:'Charles Oliveira', nickname:'"do Bronx"', division:'M_LIGHT', gender:'M', country:'Brasil', dob:'1989-10-17', debut:'2010-08-01', status:'active', tier:'legend'},
+ {name:'Dustin Poirier', nickname:'"The Diamond"', division:'M_LIGHT', gender:'M', country:'EE.UU.', dob:'1989-01-19', debut:'2010-01-09', status:'retired', tier:'legend'},
+ {name:'Justin Gaethje', nickname:'"The Highlight"', division:'M_LIGHT', gender:'M', country:'EE.UU.', dob:'1988-11-14', debut:'2017-07-07', status:'active', tier:'elite'},
+ {name:'Conor McGregor', nickname:'"The Notorious"', division:'M_LIGHT', gender:'M', country:'Irlanda', dob:'1988-07-14', debut:'2013-04-06', status:'active', tier:'legend'},
+ {name:'Khabib Nurmagomedov', nickname:'"The Eagle"', division:'M_LIGHT', gender:'M', country:'Rusia', dob:'1988-09-20', debut:'2008-07-26', status:'retired', tier:'legend'},
+ {name:'BJ Penn', nickname:'"The Prodigy"', division:'M_LIGHT', gender:'M', country:'EE.UU.', dob:'1978-12-13', debut:'2001-05-04', status:'retired', tier:'legend'},
+ {name:'Frankie Edgar', nickname:'"The Answer"', division:'M_LIGHT', gender:'M', country:'EE.UU.', dob:'1981-10-16', debut:'2007-04-07', status:'retired', tier:'legend'},
+ {name:'Arman Tsarukyan', nickname:null, division:'M_LIGHT', gender:'M', country:'Armenia', dob:'1996-10-11', debut:'2019-04-13', status:'active', tier:'elite'},
+
+ // ===== FEATHERWEIGHT =====
+ {name:'Alexander Volkanovski', nickname:'"The Great"', division:'M_FEATHER', gender:'M', country:'Australia', dob:'1988-09-29', debut:'2016-02-27', status:'active', tier:'legend'},
+ {name:'Ilia Topuria', nickname:'"El Matador"', division:'M_FEATHER', gender:'M', country:'España', dob:'1997-01-21', debut:'2020-10-18', status:'active', tier:'elite'},
+ {name:'Max Holloway', nickname:'"Blessed"', division:'M_FEATHER', gender:'M', country:'EE.UU.', dob:'1991-12-04', debut:'2012-02-04', status:'active', tier:'legend'},
+ {name:'Brian Ortega', nickname:'"T-City"', division:'M_FEATHER', gender:'M', country:'EE.UU.', dob:'1991-12-21', debut:'2014-10-04', status:'active', tier:'contender'},
+ {name:'Jose Aldo', nickname:'"Scarface"', division:'M_FEATHER', gender:'M', country:'Brasil', dob:'1986-09-09', debut:'2004-05-29', status:'retired', tier:'legend'},
+ {name:'Frankie Edgar Jr', nickname:null, division:'M_FEATHER', gender:'M', country:'EE.UU.', dob:'1992-01-01', debut:'2015-01-01', status:'retired', tier:'veteran'},
+
+ // ===== BANTAMWEIGHT =====
+ {name:'Merab Dvalishvili', nickname:'"The Machine"', division:'M_BANTAM', gender:'M', country:'Georgia', dob:'1991-01-10', debut:'2017-07-07', status:'active', tier:'elite'},
+ {name:'Sean O\'Malley', nickname:'"Sugar"', division:'M_BANTAM', gender:'M', country:'EE.UU.', dob:'1994-10-24', debut:'2017-12-30', status:'active', tier:'elite'},
+ {name:'Aljamain Sterling', nickname:'"Funk Master"', division:'M_BANTAM', gender:'M', country:'EE.UU.', dob:'1989-07-31', debut:'2014-08-23', status:'active', tier:'legend'},
+ {name:'TJ Dillashaw', nickname:null, division:'M_BANTAM', gender:'M', country:'EE.UU.', dob:'1986-12-07', debut:'2011-12-03', status:'retired', tier:'legend'},
+ {name:'Dominick Cruz', nickname:'"The Dominator"', division:'M_BANTAM', gender:'M', country:'EE.UU.', dob:'1985-03-09', debut:'2005-09-24', status:'retired', tier:'legend'},
+ {name:'Henry Cejudo', nickname:'"Triple C"', division:'M_BANTAM', gender:'M', country:'EE.UU.', dob:'1987-02-09', debut:'2013-11-06', status:'retired', tier:'legend'},
+ {name:'Cody Garbrandt', nickname:'"No Love"', division:'M_BANTAM', gender:'M', country:'EE.UU.', dob:'1991-08-02', debut:'2012-08-11', status:'active', tier:'veteran'},
+
+ // ===== FLYWEIGHT =====
+ {name:'Alexandre Pantoja', nickname:null, division:'M_FLY', gender:'M', country:'Brasil', dob:'1990-05-16', debut:'2011-09-23', status:'active', tier:'elite'},
+ {name:'Brandon Moreno', nickname:'"The Assassin Baby"', division:'M_FLY', gender:'M', country:'México', dob:'1993-12-07', debut:'2016-07-13', status:'active', tier:'elite'},
+ {name:'Deiveson Figueiredo', nickname:'"Deus da Guerra"', division:'M_FLY', gender:'M', country:'Brasil', dob:'1987-12-18', debut:'2017-03-11', status:'active', tier:'elite'},
+ {name:'Demetrious Johnson', nickname:'"Mighty Mouse"', division:'M_FLY', gender:'M', country:'EE.UU.', dob:'1986-08-13', debut:'2007-03-30', status:'retired', tier:'legend'},
+
+ // ===== WOMEN BANTAMWEIGHT =====
+ {name:'Amanda Nunes', nickname:'"The Lioness"', division:'W_BANTAM', gender:'F', country:'Brasil', dob:'1988-05-30', debut:'2008-03-29', status:'retired', tier:'legend'},
+ {name:'Ronda Rousey', nickname:'"Rowdy"', division:'W_BANTAM', gender:'F', country:'EE.UU.', dob:'1987-02-01', debut:'2010-11-18', status:'retired', tier:'legend'},
+ {name:'Holly Holm', nickname:'"The Preacher\'s Daughter"', division:'W_BANTAM', gender:'F', country:'EE.UU.', dob:'1981-10-17', debut:'2011-03-19', status:'active', tier:'legend'},
+ {name:'Julianna Pena', nickname:'"The Venezuelan Vixen"', division:'W_BANTAM', gender:'F', country:'EE.UU.', dob:'1989-08-17', debut:'2013-05-15', status:'active', tier:'elite'},
+ {name:'Raquel Pennington', nickname:null, division:'W_BANTAM', gender:'F', country:'EE.UU.', dob:'1988-10-27', debut:'2013-08-17', status:'active', tier:'contender'},
+ {name:'Miesha Tate', nickname:'"Cupcake"', division:'W_BANTAM', gender:'F', country:'EE.UU.', dob:'1986-08-04', debut:'2007-03-03', status:'retired', tier:'legend'},
+
+ // ===== WOMEN FLYWEIGHT =====
+ {name:'Valentina Shevchenko', nickname:'"Bullet"', division:'W_FLY', gender:'F', country:'Kirguistán', dob:'1988-03-07', debut:'2015-02-23', status:'active', tier:'legend'},
+ {name:'Alexa Grasso', nickname:null, division:'W_FLY', gender:'F', country:'México', dob:'1993-04-09', debut:'2016-11-05', status:'active', tier:'elite'},
+ {name:'Manon Fiorot', nickname:'"The Beast"', division:'W_FLY', gender:'F', country:'Francia', dob:'1990-01-27', debut:'2019-12-21', status:'active', tier:'elite'},
+
+ // ===== WOMEN FEATHERWEIGHT =====
+ {name:'Cris Cyborg', nickname:'"Cyborg"', division:'W_FEATHER', gender:'F', country:'Brasil', dob:'1985-07-09', debut:'2005-09-30', status:'retired', tier:'legend'},
+ {name:'Megan Anderson', nickname:null, division:'W_FEATHER', gender:'F', country:'Australia', dob:'1991-02-25', debut:'2016-08-27', status:'active', tier:'contender'},
+ {name:'Kayla Harrison', nickname:null, division:'W_FEATHER', gender:'F', country:'EE.UU.', dob:'1990-07-02', debut:'2018-08-25', status:'active', tier:'elite'},
+
+ // ===== WOMEN STRAWWEIGHT =====
+ {name:'Zhang Weili', nickname:'"Magnum"', division:'W_STRAW', gender:'F', country:'China', dob:'1989-08-13', debut:'2013-01-19', status:'active', tier:'legend'},
+ {name:'Rose Namajunas', nickname:'"Thug Rose"', division:'W_STRAW', gender:'F', country:'EE.UU.', dob:'1992-06-29', debut:'2014-08-23', status:'active', tier:'legend'},
+ {name:'Joanna Jedrzejczyk', nickname:'"Joanna Champion"', division:'W_STRAW', gender:'F', country:'Polonia', dob:'1987-08-18', debut:'2012-06-23', status:'retired', tier:'legend'},
+ {name:'Carla Esparza', nickname:'"Cookie Monster"', division:'W_STRAW', gender:'F', country:'EE.UU.', dob:'1987-08-15', debut:'2009-08-29', status:'retired', tier:'legend'},
+ {name:'Yan Xiaonan', nickname:null, division:'W_STRAW', gender:'F', country:'China', dob:'1989-06-30', debut:'2018-04-21', status:'active', tier:'contender'},
+];
+
+const TIER_RANGES = {
+  legend:[78,95], elite:[74,90], contender:[65,82], veteran:[60,78]
+};
+
+function makeRealFighter(rf){
+  const range = TIER_RANGES[rf.tier]||[60,80];
+  const stats={};
+  STAT_KEYS.forEach(([k])=> stats[k]=randi(range[0],range[1]));
+  const longevity = rf.status==='retired'? randi(0,25) : randi(55,100);
+  return {
+    id: uid('F'), name:rf.name, nickname:rf.nickname, gender:rf.gender, country:rf.country,
+    dob:rf.dob, debut:rf.debut, division:rf.division, stats, longevity,
+    status: rf.status==='retired'?'retired':'active',
+    injury:{active:false, untilDate:null, note:''},
+    record:{wins:0,losses:0,draws:0,nc:0,koWins:0,subWins:0,decWins:0,koLosses:0,subLosses:0,decLosses:0},
+    bonuses:{fightOfNight:0, performanceOfNight:0},
+    titleReigns:[], fightHistory:[], lastEventSeq:null,
+    hof: rf.tier==='legend' && rf.status==='retired',
+    rankScore:0
+  };
+}
+
+function seedFighters(){
+  STATE.fighters = REAL_FIGHTERS.map(makeRealFighter);
+  // si alguna categoría se quedara con menos de 2 peleadores, se completa con generados aleatoriamente
+  DIVISIONS.forEach(div=>{
+    const count = STATE.fighters.filter(f=>f.division===div.id).length;
+    for(let i=count;i<2;i++) STATE.fighters.push(makeFighter(div.id, div.gender));
+  });
+  // crear títulos de división + BMF
+  STATE.titles = DIVISIONS.map(d=>({
+    id: uid('T'), name: `Cinturón de ${divName(d.id)}`, divisionId:d.id, holderId:null, isInterim:false, history:[]
+  }));
+  STATE.titles.push({id:uid('T'), name:'Cinturón BMF', divisionId:null, holderId:null, isInterim:false, history:[]});
+  logEvent(`Liga inicializada con ${STATE.fighters.length} peleadores (roster real + generados).`);
+  saveLocal();
+}
+
+/* ====================== PERSISTENCIA LOCAL ====================== */
+function saveLocal(){ localStorage.setItem(LS_KEY, JSON.stringify(STATE)); }
+function loadLocal(){ const s=localStorage.getItem(LS_KEY); return s? JSON.parse(s): null; }
+function getCfg(){ return JSON.parse(localStorage.getItem(LS_CFG)||'{}'); }
+function setCfg(c){ localStorage.setItem(LS_CFG, JSON.stringify(c)); }
+
+/* ====================== MOTOR DE SIMULACIÓN ====================== */
+function winProbabilities(fA, fB){
+  const ratingA = overallRating(fA), ratingB = overallRating(fB);
+  const diff = ratingA - ratingB;
+  let probA = 1/(1+Math.pow(10,-diff/14));
+  probA = clamp(probA, 0.05, 0.95);
+  return {probA: probA*100, probB:(1-probA)*100};
+}
+function overallRating(f){
+  const s=f.stats;
+  let base = s.power*0.15 + s.striking*0.22 + s.wrestlingOff*0.14 + s.wrestlingDef*0.12 + s.ground*0.15 + s.cardio*0.12 + s.chin*0.10;
+  base *= (f.longevity/100)*0.25 + 0.75; // el desgaste resta un poco de rendimiento
+  return base;
+}
+
+function simulateFight(fA, fB, opts={}){
+  const rounds = opts.rounds || 3;
+  const ratingA = overallRating(fA), ratingB = overallRating(fB);
+  const diff = ratingA-ratingB;
+  let probA = 1/(1+Math.pow(10,-diff/14));
+  probA = clamp(probA,0.08,0.92); // siempre cabe la sorpresa
+  const aWins = Math.random()<probA;
+  const winner = aWins? fA: fB;
+  const loser = aWins? fB: fA;
+
+  // chances de método según atributos del ganador vs perdedor
+  let koChance = clamp((winner.stats.power*0.6+winner.stats.striking*0.4 - loser.stats.chin*0.8)/140, 0.03, 0.62);
+  let subChance = clamp((winner.stats.ground*0.6+winner.stats.wrestlingOff*0.4 - loser.stats.wrestlingDef*0.8)/150, 0.02, 0.5);
+  let decChance = clamp(1-koChance-subChance, 0.15, 0.95);
+  const tot = koChance+subChance+decChance;
+  koChance/=tot; subChance/=tot; decChance/=tot;
+  const roll=Math.random();
+  let method, round, time;
+  if(roll<koChance){
+    method='KO/TKO';
+    round=randi(1,rounds);
+    time=`${randi(0,4)}:${String(randi(0,59)).padStart(2,'0')}`;
+  } else if(roll<koChance+subChance){
+    method='Sumisión';
+    round=randi(1,rounds);
+    time=`${randi(0,4)}:${String(randi(0,59)).padStart(2,'0')}`;
+  } else {
+    method='Decisión';
+    round=rounds;
+    time='5:00';
+  }
+  const close = Math.abs(diff)<6;
+  const fightOfNightChance = method==='Decisión'? (close?0.22:0.08) : (close?0.16:0.07);
+  const performanceChance = method!=='Decisión'? 0.28 : 0.02;
+
+  return {winner, loser, method, round, time, rounds, fightOfNight: Math.random()<fightOfNightChance, performance: Math.random()<performanceChance};
+}
+
+/* ====================== LESIONES / LONGEVIDAD / RETIRO ====================== */
+function applyPostFightWearAndInjury(fighter, won, method, eventDate){
+  // desgaste de longevidad
+  let wear = randi(1,3);
+  if(method==='KO/TKO' && !won) wear += randi(2,5);
+  if(method!=='Decisión') wear += randi(0,2);
+  fighter.longevity = clamp(fighter.longevity-wear, 0, 100);
+
+  // lesión aleatoria
+  const injuryChance = 0.07 + (method==='KO/TKO' && !won? 0.05:0);
+  if(Math.random()<injuryChance){
+    const days = randi(45,260);
+    fighter.injury = {active:true, untilDate: addDays(eventDate, days), note: pick(['Lesión de rodilla','Lesión de hombro','Fractura de mano','Conmoción / protocolo médico','Lesión de tobillo','Desgarro muscular'])};
+    fighter.status='injured';
+    logEvent(`🩹 ${fighter.name} sufre una lesión (${fighter.injury.note}) y estará fuera hasta ${fmtDate(fighter.injury.untilDate)}.`);
+  }
+
+  // retiro
+  const age = ageFromDob(fighter.dob, eventDate);
+  let retireProb = 0;
+  if(age>=39) retireProb += 0.35;
+  else if(age>=36) retireProb += 0.16;
+  else if(age>=33) retireProb += 0.05;
+  if(fighter.longevity<=15) retireProb += 0.45;
+  else if(fighter.longevity<=30) retireProb += 0.2;
+  else if(fighter.longevity<=45) retireProb += 0.08;
+  if(!won && method==='KO/TKO') retireProb += 0.04;
+  retireProb = clamp(retireProb,0,0.9);
+  if(fighter.status!=='retired' && Math.random()<retireProb){
+    fighter.status='retired';
+    logEvent(`👋 ${fighter.name} (${age} años) anuncia su retirada tras el combate.`);
+  }
+}
+
+/* ====================== RANKINGS ====================== */
+function computeRankScore(f){
+  const r=f.record;
+  let score = r.wins*3 - r.losses*1.5 + r.koWins*0.6 + r.subWins*0.6 + f.bonuses.performanceOfNight*0.8 + f.bonuses.fightOfNight*0.5;
+  if(isChampion(f.id)) score += 12;
+  if(isInterimChampion(f.id)) score += 8;
+  score += (f.titleReigns||[]).reduce((a,t)=>a+(t.defenses||0),0)*2;
+  // penalizar inactividad
+  const inactivity = f.lastEventSeq!=null? (STATE.meta.eventSeq - f.lastEventSeq) : 2;
+  score -= inactivity*0.4;
+  return score;
+}
+function isChampion(fid){ return STATE.titles.some(t=>!t.isInterim && t.holderId===fid && !t.id.startsWith('BMF_NEVER')); }
+function isInterimChampion(fid){ return STATE.titles.some(t=>t.isInterim && t.holderId===fid); }
+
+function refreshRankings(){
+  STATE.fighters.forEach(f=> f.rankScore = computeRankScore(f));
+}
+
+function divisionTop15(divId){
+  return STATE.fighters.filter(f=>f.division===divId && f.status!=='retired')
+    .sort((a,b)=>b.rankScore-a.rankScore).slice(0,15);
+}
+function p4pTop15(){
+  return STATE.fighters.filter(f=>f.status==='active' || f.status==='injured')
+    .sort((a,b)=>b.rankScore-a.rankScore).slice(0,15);
+}
+
+/* ====================== GOAT SCORE ====================== */
+function goatScore(f){
+  const r=f.record;
+  const reigns=(f.titleReigns||[]);
+  const totalDefenses = reigns.reduce((a,t)=>a+(t.defenses||0),0);
+  const totalTitleDays = reigns.reduce((a,t)=>{
+    const end = t.lostDate || STATE.meta.currentDate;
+    return a + (new Date(end)-new Date(t.wonDate))/(1000*3600*24);
+  },0);
+  return Math.round(
+    r.wins*2.2 - r.losses*1.2 + r.koWins*0.6 + r.subWins*0.6 +
+    totalDefenses*6 + reigns.length*10 + totalTitleDays*0.02 +
+    f.bonuses.performanceOfNight*1.2 + f.bonuses.fightOfNight*0.8
+  );
+}
+
+/* ====================== EVENTOS / CARTELERA ====================== */
+function fighterAvailable(f){
+  if(f.status==='retired') return false;
+  if(f.status==='injured'){
+    if(!f.injury.active) return true;
+    if(new Date(f.injury.untilDate) <= new Date(STATE.meta.currentDate)) return true;
+    return false;
+  }
+  // cooldown: no puede pelear si participó en el evento inmediatamente anterior (el último creado)
+  if(f.lastEventSeq!=null && f.lastEventSeq === STATE.meta.eventSeq-1) return false;
+  return true;
+}
+
+function createEvent(name, date){
+  const ev = {id:uid('E'), seq:STATE.meta.eventSeq, name, date, status:'scheduled', card:[]};
+  STATE.events.push(ev);
+  STATE.meta.eventSeq++;
+  saveLocal();
+  return ev;
+}
+
+function addFightToEvent(ev, fAId, fBId, titleId=null, isInterim=false, isMain=false){
+  ev.card.push({id:uid('FT'), fighterA:fAId, fighterB:fBId, titleId, isInterim, isMain, result:null});
+}
+
+function simulateEvent(ev){
+  if(ev.status==='completed') return;
+  // ordenar: main event al final de simulación (para mostrar primero en UI da igual)
+  ev.card.forEach(fight=>{
+    const fA = STATE.fighters.find(x=>x.id===fight.fighterA);
+    const fB = STATE.fighters.find(x=>x.id===fight.fighterB);
+    if(!fA||!fB) return;
+    const isTitle = !!fight.titleId;
+    const result = simulateFight(fA, fB, {rounds: isTitle?5:3});
+    const winner=result.winner, loser=result.loser;
+
+    // récords
+    winner.record.wins++; loser.record.losses++;
+    if(result.method==='KO/TKO'){winner.record.koWins++; loser.record.koLosses++;}
+    if(result.method==='Sumisión'){winner.record.subWins++; loser.record.subLosses++;}
+    if(result.method==='Decisión'){winner.record.decWins++; loser.record.decLosses++;}
+    if(result.performance){ winner.bonuses.performanceOfNight++; }
+    if(result.fightOfNight){ winner.bonuses.fightOfNight++; loser.bonuses.fightOfNight++; }
+
+    fight.result = {
+      winnerId:winner.id, loserId:loser.id, method:result.method, round:result.round, time:result.time,
+      fightOfNight:result.fightOfNight, performance:result.performance
+    };
+
+    [fA,fB].forEach(f=>{ f.fightHistory.push(fight.id); f.lastEventSeq=ev.seq; });
+
+    // título
+    if(isTitle){
+      const title = STATE.titles.find(t=>t.id===fight.titleId);
+      if(title){
+        const prevHolder = title.holderId;
+        if(winner.id!==prevHolder){
+          // cierra reinado anterior si lo había
+          if(prevHolder){
+            const pf = STATE.fighters.find(x=>x.id===prevHolder);
+            if(pf){ const reign=(pf.titleReigns||[]).find(r=>r.titleId===title.id && !r.lostDate); if(reign) reign.lostDate=ev.date; }
+          }
+          title.holderId = winner.id;
+          title.isInterim = fight.isInterim;
+          winner.titleReigns = winner.titleReigns||[];
+          winner.titleReigns.push({titleId:title.id, wonDate:ev.date, lostDate:null, defenses:0});
+          title.history.push({fighterId:winner.id, wonEventId:ev.id, wonDate:ev.date});
+          logEvent(`🏆 ${winner.name} se proclama ${fight.isInterim?'campeón interino':'campeón'} de ${title.name}!`);
+          if(!fight.isInterim){
+            // si gana el título indiscutido siendo antes interino en otra pelea de unificación, limpiar interino
+          }
+        } else {
+          // defensa
+          const reign=(winner.titleReigns||[]).find(r=>r.titleId===title.id && !r.lostDate);
+          if(reign) reign.defenses=(reign.defenses||0)+1;
+          logEvent(`🛡️ ${winner.name} defiende con éxito ${title.name} (defensa nº ${reign?reign.defenses:'?'}).`);
+        }
+      }
+    }
+
+    applyPostFightWearAndInjury(winner, true, result.method, ev.date);
+    applyPostFightWearAndInjury(loser, false, result.method, ev.date);
+
+    logEvent(`🥊 ${winner.name} derrota a ${loser.name} por ${result.method} (R${result.round}, ${result.time})${isTitle?' — combate de título':''}`);
+  });
+  ev.status='completed';
+  refreshRankings();
+  saveLocal();
+}
+
+/* ====================== INTERINO POR LESIÓN DE CAMPEÓN ====================== */
+function vacateTitleForInjury(titleId){
+  const title = STATE.titles.find(t=>t.id===titleId);
+  if(!title || !title.holderId) return;
+  const f = STATE.fighters.find(x=>x.id===title.holderId);
+  if(f){ const reign=(f.titleReigns||[]).find(r=>r.titleId===title.id && !r.lostDate); if(reign) reign.lostDate=STATE.meta.currentDate; }
+  logEvent(`⚠️ ${title.name} queda vacante (campeón lesionado/retirado).`);
+  title.holderId=null; title.isInterim=false;
+  saveLocal();
+}
+
+/* ====================== RENDER: SHELL ====================== */
+const TABS = [
+  ['dashboard','Inicio'],['roster','Roster'],['rankings','Rankings'],['titles','Títulos'],
+  ['events','Eventos'],['stats','Estadísticas'],['activity','Actividad'],['hof','Hall of Fame'],
+  ['editor','Editor'],['settings','GitHub']
+];
+
+function renderShell(){
+  document.getElementById('topDate').textContent = '📅 ' + fmtDate(STATE.meta.currentDate);
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = TABS.map(([id,label])=>`<div class="tab ${UI.tab===id?'active':''}" data-tab="${id}">${label}</div>`).join('');
+  tabsEl.querySelectorAll('.tab').forEach(t=> t.onclick=()=>{ UI.tab=t.dataset.tab; render(); });
+  renderTab();
+}
+
+function render(){ renderShell(); }
+
+function renderTab(){
+  const app=document.getElementById('app');
+  refreshRankings();
+  switch(UI.tab){
+    case 'dashboard': app.innerHTML=tplDashboard(); bindDashboard(); break;
+    case 'roster': app.innerHTML=tplRoster(); bindRoster(); break;
+    case 'rankings': app.innerHTML=tplRankings(); bindRankings(); break;
+    case 'titles': app.innerHTML=tplTitles(); bindTitles(); break;
+    case 'events': app.innerHTML=tplEvents(); bindEvents(); break;
+    case 'stats': app.innerHTML=tplStats(); break;
+    case 'activity': app.innerHTML=tplActivity(); break;
+    case 'hof': app.innerHTML=tplHof(); bindHof(); break;
+    case 'editor': app.innerHTML=tplEditor(); bindEditor(); break;
+    case 'settings': app.innerHTML=tplSettings(); bindSettings(); break;
+  }
+}
+
+/* ====================== DASHBOARD ====================== */
+function tplDashboard(){
+  const active = STATE.fighters.filter(f=>f.status==='active').length;
+  const injured = STATE.fighters.filter(f=>f.status==='injured').length;
+  const retired = STATE.fighters.filter(f=>f.status==='retired').length;
+  const nextEvent = STATE.events.find(e=>e.status==='scheduled');
+  return `
+  <div class="card">
+    <h2>${STATE.meta.leagueName} — Panel de control</h2>
+    <div class="grid3">
+      <div class="card tight"><div class="muted">Activos</div><h3>${active}</h3></div>
+      <div class="card tight"><div class="muted">Lesionados</div><h3>${injured}</h3></div>
+      <div class="card tight"><div class="muted">Retirados</div><h3>${retired}</h3></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-title"><h3>Próximo evento</h3></div>
+    ${nextEvent? `<div class="fightcard-item"><b>${nextEvent.name}</b><div class="muted">${fmtDate(nextEvent.date)} — ${nextEvent.card.length} combates</div></div>
+      <div class="row"><button class="btn primary full" id="goEvent">Ir a Eventos →</button></div>`
+      : `<p class="muted">No hay eventos programados. Crea uno en la pestaña Eventos.</p>`}
+  </div>
+  <div class="card">
+    <h3>Avanzar calendario</h3>
+    <div class="row">
+      <input type="date" id="dashDate" value="${STATE.meta.currentDate}">
+      <button class="btn" id="setDate">Fijar fecha</button>
+    </div>
+    <p class="muted">Cambia la fecha actual de la liga manualmente (útil tras simular eventos).</p>
+  </div>
+  <div class="card">
+    <h3>Registro de actividad reciente</h3>
+    <div class="log">${STATE.log.slice(0,40).map(l=>`<div><b>${fmtDate(l.date)}</b> — ${l.msg}</div>`).join('')||'<p class="muted">Sin eventos todavía.</p>'}</div>
+  </div>
+  `;
+}
+function bindDashboard(){
+  const go=document.getElementById('goEvent'); if(go) go.onclick=()=>{UI.tab='events'; render();};
+  document.getElementById('setDate').onclick=()=>{
+    STATE.meta.currentDate = document.getElementById('dashDate').value || STATE.meta.currentDate;
+    saveLocal(); render(); toast('Fecha actualizada');
+  };
+}
+
+/* ====================== ROSTER ====================== */
+function fighterStatusPill(f){
+  if(f.status==='retired') return `<span class="pill retired">Retirado</span>`;
+  if(f.status==='injured') return `<span class="pill injured">Lesionado</span>`;
+  if(isChampion(f.id)) return `<span class="pill champ">Campeón</span>`;
+  if(isInterimChampion(f.id)) return `<span class="pill interim">Interino</span>`;
+  return `<span class="pill">Activo</span>`;
+}
+
+function tplRoster(){
+  const opts = `<option value="ALL">Todas las categorías</option>` + DIVISIONS.map(d=>`<option value="${d.id}">${divName(d.id)}</option>`).join('');
+  let list = STATE.fighters.slice();
+  if(UI.rosterFilter!=='ALL') list=list.filter(f=>f.division===UI.rosterFilter);
+  if(UI.rosterSearch) list=list.filter(f=>f.name.toLowerCase().includes(UI.rosterSearch.toLowerCase()));
+  list.sort((a,b)=>b.rankScore-a.rankScore);
+  return `
+  <div class="card">
+    <h2>Roster (${STATE.fighters.length})</h2>
+    <select id="fDiv">${opts}</select>
+    <input id="fSearch" placeholder="Buscar peleador..." value="${UI.rosterSearch}">
+  </div>
+  <div class="card">
+    <table><thead><tr><th>Nombre</th><th>Div.</th><th>Récord</th><th>Estado</th></tr></thead>
+    <tbody>
+    ${list.map(f=>`<tr class="clickable" data-id="${f.id}">
+      <td>${f.name}${f.hof?' <span class="pill hof">HOF</span>':''}</td>
+      <td style="font-size:.72rem">${divName(f.division).replace('♀ ','♀').replace('♂ ','♂')}</td>
+      <td>${f.record.wins}-${f.record.losses}-${f.record.draws}</td>
+      <td>${fighterStatusPill(f)}</td>
+    </tr>`).join('')}
+    </tbody></table>
+  </div>
+  `;
+}
+function bindRoster(){
+  document.getElementById('fDiv').value=UI.rosterFilter;
+  document.getElementById('fDiv').onchange=e=>{UI.rosterFilter=e.target.value; render();};
+  document.getElementById('fSearch').oninput=e=>{UI.rosterSearch=e.target.value; renderTab();};
+  document.querySelectorAll('tr[data-id]').forEach(tr=> tr.onclick=()=> openFighterModal(tr.dataset.id));
+}
+
+function openFighterModal(fid){
+  const f = STATE.fighters.find(x=>x.id===fid); if(!f) return;
+  const age = ageFromDob(f.dob, STATE.meta.currentDate);
+  const reigns = (f.titleReigns||[]).map(r=>{
+    const t=STATE.titles.find(x=>x.id===r.titleId);
+    return `<div>🏆 ${t?t.name:'?'} — desde ${fmtDate(r.wonDate)}${r.lostDate?` hasta ${fmtDate(r.lostDate)}`:' (vigente)'} · ${r.defenses||0} defensas</div>`;
+  }).join('') || '<p class="muted">Sin reinados de título.</p>';
+  const fights = f.fightHistory.slice(-10).reverse().map(fid2=>{
+    let found=null;
+    for(const ev of STATE.events){ const ft=ev.card.find(x=>x.id===fid2); if(ft){found={ev,ft};break;} }
+    if(!found || !found.ft.result) return '';
+    const r=found.ft.result; const opp = STATE.fighters.find(x=>x.id===(r.winnerId===f.id?r.loserId:r.winnerId));
+    const won = r.winnerId===f.id;
+    return `<div>${won?'✅':'❌'} vs ${opp?opp.name:'?'} — ${r.method} R${r.round} (${fmtDate(found.ev.date)})</div>`;
+  }).join('') || '<p class="muted">Sin combates.</p>';
+
+  document.getElementById('modalRoot').innerHTML = `
+  <div class="modal-bg" id="modalBg">
+    <div class="modal">
+      <button class="btn small closebtn" id="modalClose">✕</button>
+      <h2>${f.name} ${f.nickname||''}</h2>
+      <div class="badge-row">${fighterStatusPill(f)}<span class="pill">${divName(f.division)}</span><span class="pill">${f.country}</span></div>
+      <p class="muted">Edad: ${age} años · Nacido: ${fmtDate(f.dob)} · Debut: ${fmtDate(f.debut)}</p>
+      <p>Récord: <b>${f.record.wins}-${f.record.losses}-${f.record.draws}</b> (NC ${f.record.nc})
+        · KO ${f.record.koWins} · SUB ${f.record.subWins} · DEC ${f.record.decWins}</p>
+      <p class="muted">Bonos: ${f.bonuses.performanceOfNight} Actuación de la Noche · ${f.bonuses.fightOfNight} Pelea de la Noche</p>
+      <h3>Atributos</h3>
+      ${STAT_KEYS.map(([k,label])=>`<div><div style="display:flex;justify-content:space-between"><span>${label}</span><span>${f.stats[k]}</span></div><div class="statbar"><i style="width:${f.stats[k]}%"></i></div></div>`).join('')}
+      <div style="display:flex;justify-content:space-between;margin-top:6px"><span>Longevidad</span><span>${f.longevity}/100</span></div>
+      <div class="statbar"><i style="width:${f.longevity}%;background:${f.longevity<30?'var(--red)':'var(--green)'}"></i></div>
+      <h3>Historial de títulos</h3>${reigns}
+      <h3>Últimos combates</h3>${fights}
+      ${f.injury.active? `<p class="pill injured">Lesión: ${f.injury.note} — vuelve el ${fmtDate(f.injury.untilDate)}</p>`:''}
+      <div class="row" style="margin-top:10px">
+        <button class="btn gold full" id="editThis">Editar en el Editor →</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('modalBg').onclick=e=>{ if(e.target.id==='modalBg') closeModal(); };
+  document.getElementById('modalClose').onclick=closeModal;
+  document.getElementById('editThis').onclick=()=>{ closeModal(); UI.tab='editor'; UI.selectedFighter=f.id; render(); };
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+
+/* ====================== RANKINGS ====================== */
+function tplRankings(){
+  const opts = DIVISIONS.map(d=>`<option value="${d.id}">${divName(d.id)}</option>`).join('');
+  return `
+  <div class="card">
+    <h2>Ranking Pound-for-Pound (Top 15)</h2>
+    <table><thead><tr><th>#</th><th>Nombre</th><th>Récord</th><th>Score</th></tr></thead><tbody>
+    ${p4pTop15().map((f,i)=>`<tr class="clickable" data-id="${f.id}"><td>${i+1}</td><td>${f.name}${isChampion(f.id)?' 🏆':''}</td><td>${f.record.wins}-${f.record.losses}</td><td>${f.rankScore.toFixed(1)}</td></tr>`).join('')}
+    </tbody></table>
+  </div>
+  <div class="card">
+    <h3>Ranking por categoría</h3>
+    <select id="rankDiv">${opts}</select>
+    <div id="rankDivList"></div>
+  </div>`;
+}
+function bindRankings(){
+  document.querySelectorAll('tr[data-id]').forEach(tr=> tr.onclick=()=> openFighterModal(tr.dataset.id));
+  const sel=document.getElementById('rankDiv');
+  const draw=()=>{
+    const list = divisionTop15(sel.value);
+    document.getElementById('rankDivList').innerHTML = `<table><thead><tr><th>#</th><th>Nombre</th><th>Récord</th><th>Score</th></tr></thead><tbody>
+    ${list.map((f,i)=>`<tr class="clickable" data-id="${f.id}"><td>${i+1}</td><td>${f.name}${isChampion(f.id)?' 🏆':isInterimChampion(f.id)?' 🥈':''}</td><td>${f.record.wins}-${f.record.losses}</td><td>${f.rankScore.toFixed(1)}</td></tr>`).join('')}
+    </tbody></table>`;
+    document.querySelectorAll('#rankDivList tr[data-id]').forEach(tr=> tr.onclick=()=> openFighterModal(tr.dataset.id));
+  };
+  sel.onchange=draw; draw();
+}
+
+/* ====================== TÍTULOS ====================== */
+function tplTitles(){
+  return `<div class="card"><h2>Cinturones</h2>
+  ${STATE.titles.map(t=>{
+    const holder = STATE.fighters.find(f=>f.id===t.holderId);
+    const reign = holder? (holder.titleReigns||[]).find(r=>r.titleId===t.id && !r.lostDate) : null;
+    const totalDefenses = t.history.length? t.history.reduce((acc,h)=>{
+      const f=STATE.fighters.find(x=>x.id===h.fighterId);
+      const r=f? (f.titleReigns||[]).find(rr=>rr.titleId===t.id && rr.wonDate===h.wonDate):null;
+      return acc+(r?r.defenses||0:0);
+    },0):0;
+    return `<div class="fightcard-item">
+      <b>${t.name}</b>${t.isInterim?' <span class="pill interim">Interino</span>':''}
+      <div class="muted">Campeón: ${holder? holder.name+(t.isInterim?' (interino)':'') : 'Vacante'}${reign? ' · '+(reign.defenses||0)+' defensas en este reinado':''}</div>
+      <div class="muted">Reinados históricos: ${t.history.length} · Defensas totales registradas: ${totalDefenses}</div>
+      ${holder? `<button class="btn small danger" data-vacate="${t.id}">Vacar título (lesión/retiro)</button>`:''}
+    </div>`;
+  }).join('')}
+  </div>
+  <div class="card">
+    <h3>Crear nuevo título</h3>
+    <input id="newTitleName" placeholder="Nombre del título (ej: Cinturón BMF 2, Catchweight...)">
+    <label>Asociar a categoría (opcional, vacío = título especial tipo BMF)</label>
+    <select id="newTitleDiv"><option value="">Ninguna (especial)</option>${DIVISIONS.map(d=>`<option value="${d.id}">${divName(d.id)}</option>`).join('')}</select>
+    <button class="btn primary full" id="addTitle">Crear título</button>
+  </div>`;
+}
+function bindTitles(){
+  document.querySelectorAll('[data-vacate]').forEach(b=> b.onclick=()=>{ vacateTitleForInjury(b.dataset.vacate); render(); });
+  document.getElementById('addTitle').onclick=()=>{
+    const name=document.getElementById('newTitleName').value.trim();
+    if(!name) return toast('Pon un nombre al título');
+    STATE.titles.push({id:uid('T'), name, divisionId:document.getElementById('newTitleDiv').value||null, holderId:null, isInterim:false, history:[]});
+    saveLocal(); render(); toast('Título creado');
+  };
+}
+
+/* ====================== EVENTOS ====================== */
+function tplEvents(){
+  const scheduled = STATE.events.filter(e=>e.status==='scheduled');
+  const completed = STATE.events.filter(e=>e.status==='completed').slice().reverse();
+  return `
+  <div class="card">
+    <h2>Crear evento</h2>
+    <input id="evName" placeholder="Nombre del evento (ej: UFC 320)">
+    <input id="evDate" type="date" value="${addDays(STATE.meta.currentDate,21)}">
+    <button class="btn primary full" id="createEvBtn">Crear evento</button>
+  </div>
+  ${scheduled.map(ev=>tplEventBuilder(ev)).join('')}
+  <div class="card">
+    <h3>Eventos completados (${completed.length})</h3>
+    ${completed.slice(0,15).map(ev=>`<div class="fightcard-item"><b>${ev.name}</b> <span class="muted">${fmtDate(ev.date)}</span>
+      ${ev.card.map(ft=>{
+        const a=STATE.fighters.find(x=>x.id===ft.fighterA), b=STATE.fighters.find(x=>x.id===ft.fighterB);
+        const r=ft.result; const w=r?STATE.fighters.find(x=>x.id===r.winnerId):null;
+        return `<div class="muted">${a?a.name:'?'} vs ${b?b.name:'?'} → ${w?w.name:'?'} (${r?r.method:''} R${r?r.round:''})${r&&r.fightOfNight?' 🌟POTN':''}${r&&r.performance?' ⭐':''}</div>`;
+      }).join('')}
+    </div>`).join('') || '<p class="muted">Sin eventos completados.</p>'}
+  </div>`;
+}
+
+function tplEventBuilder(ev){
+  const opts = `<option value="ALL">Todas</option>` + DIVISIONS.map(d=>`<option value="${d.id}">${divName(d.id)}</option>`).join('');
+  return `
+  <div class="card" data-ev="${ev.id}">
+    <div class="section-title"><h3>${ev.name}</h3><span class="muted">${fmtDate(ev.date)}</span></div>
+    <div class="row">
+      <select class="evDivFilter">${opts}</select>
+    </div>
+    <div class="row">
+      <select class="evFighterA"></select>
+      <select class="evFighterB"></select>
+    </div>
+    <div class="probDisplay muted" style="text-align:center;font-size:.8rem;margin:2px 0 4px"></div>
+    <div class="row">
+      <select class="evTitle"><option value="">Sin título en juego</option>
+        ${STATE.titles.map(t=>`<option value="${t.id}">${t.name}${t.holderId?'':' (vacante)'}</option>`).join('')}
+      </select>
+      <label style="display:flex;align-items:center;gap:6px;flex:0 0 auto"><input type="checkbox" class="evInterim" style="width:auto"> Interino</label>
+    </div>
+    <button class="btn full addFightBtn" data-ev="${ev.id}">+ Añadir combate a la cartelera</button>
+    <div class="fightcardlist">
+      ${ev.card.map((ft,idx)=>{
+        const a=STATE.fighters.find(x=>x.id===ft.fighterA), b=STATE.fighters.find(x=>x.id===ft.fighterB);
+        const t=ft.titleId? STATE.titles.find(x=>x.id===ft.titleId):null;
+        return `<div class="fightcard-item">
+          <div>${idx+1}. ${a?a.name:'?'} <span class="vs">VS</span> ${b?b.name:'?'}</div>
+          ${t?`<div class="muted">🏆 ${t.name}${ft.isInterim?' (interino)':''}</div>`:''}
+          <button class="btn small danger removeFightBtn" data-ev="${ev.id}" data-idx="${idx}">Quitar</button>
+        </div>`;
+      }).join('') || '<p class="muted">Cartelera vacía.</p>'}
+    </div>
+    ${ev.card.length>0? `<button class="btn green full simulateBtn" data-ev="${ev.id}">▶ Simular evento completo</button>`:''}
+  </div>`;
+}
+
+function updateProbDisplay(card){
+  const aId = card.querySelector('.evFighterA').value;
+  const bId = card.querySelector('.evFighterB').value;
+  const disp = card.querySelector('.probDisplay');
+  if(!disp) return;
+  const fA = STATE.fighters.find(x=>x.id===aId);
+  const fB = STATE.fighters.find(x=>x.id===bId);
+  if(!fA || !fB || aId===bId){ disp.textContent=''; return; }
+  const p = winProbabilities(fA, fB);
+  disp.innerHTML = `<b>${fA.name}</b> ${p.probA.toFixed(0)}%  —  ${p.probB.toFixed(0)}% <b>${fB.name}</b>`;
+}
+
+function fillFighterSelects(card){
+  const divSel = card.querySelector('.evDivFilter');
+  const aSel = card.querySelector('.evFighterA');
+  const bSel = card.querySelector('.evFighterB');
+  const divId = divSel.value;
+  let pool = STATE.fighters.filter(fighterAvailable);
+  if(divId!=='ALL') pool = pool.filter(f=>f.division===divId);
+  pool.sort((a,b)=>a.name.localeCompare(b.name));
+  const optsHtml = pool.map(f=>`<option value="${f.id}">${f.name} (${divName(f.division).replace('♀ ','♀').replace('♂ ','♂')}, ${f.record.wins}-${f.record.losses})</option>`).join('');
+  aSel.innerHTML = optsHtml; bSel.innerHTML = optsHtml;
+  if(pool.length>1) bSel.selectedIndex=1;
+  aSel.onchange = ()=> updateProbDisplay(card);
+  bSel.onchange = ()=> updateProbDisplay(card);
+  updateProbDisplay(card);
+}
+
+function bindEvents(){
+  document.getElementById('createEvBtn').onclick=()=>{
+    const name=document.getElementById('evName').value.trim()||`Evento #${STATE.meta.eventSeq}`;
+    const date=document.getElementById('evDate').value||STATE.meta.currentDate;
+    createEvent(name,date); render(); toast('Evento creado');
+  };
+  document.querySelectorAll('[data-ev]').forEach(card=>{
+    if(!card.classList.contains('card')) return;
+  });
+  document.querySelectorAll('.card[data-ev]').forEach(card=>{
+    const evId=card.dataset.ev;
+    fillFighterSelects(card);
+    card.querySelector('.evDivFilter').onchange=()=> fillFighterSelects(card);
+  });
+  document.querySelectorAll('.addFightBtn').forEach(btn=>{
+    btn.onclick=()=>{
+      const card = btn.closest('.card');
+      const ev = STATE.events.find(x=>x.id===btn.dataset.ev);
+      const aId=card.querySelector('.evFighterA').value, bId=card.querySelector('.evFighterB').value;
+      if(!aId||!bId||aId===bId) return toast('Selecciona dos peleadores distintos');
+      const titleId=card.querySelector('.evTitle').value||null;
+      const isInterim=card.querySelector('.evInterim').checked;
+      addFightToEvent(ev, aId, bId, titleId, isInterim);
+      saveLocal(); render(); toast('Combate añadido');
+    };
+  });
+  document.querySelectorAll('.removeFightBtn').forEach(btn=>{
+    btn.onclick=()=>{
+      const ev=STATE.events.find(x=>x.id===btn.dataset.ev);
+      ev.card.splice(parseInt(btn.dataset.idx),1);
+      saveLocal(); render();
+    };
+  });
+  document.querySelectorAll('.simulateBtn').forEach(btn=>{
+    btn.onclick=()=>{
+      const ev=STATE.events.find(x=>x.id===btn.dataset.ev);
+      simulateEvent(ev);
+      STATE.meta.currentDate = ev.date;
+      saveLocal(); render(); toast('Evento simulado ✅');
+    };
+  });
+}
+
+/* ====================== ESTADÍSTICAS ====================== */
+function tplStats(){
+  const all=STATE.fighters;
+  const topKO = all.slice().sort((a,b)=>b.record.koWins-a.record.koWins).slice(0,8);
+  const topSub = all.slice().sort((a,b)=>b.record.subWins-a.record.subWins).slice(0,8);
+  const topWins = all.slice().sort((a,b)=>b.record.wins-a.record.wins).slice(0,8);
+  const topFOTN = all.slice().sort((a,b)=>b.bonuses.fightOfNight-a.bonuses.fightOfNight).slice(0,8);
+  const topPOTN = all.slice().sort((a,b)=>b.bonuses.performanceOfNight-a.bonuses.performanceOfNight).slice(0,8);
+  const block=(title,list,key,fmt)=>`<div class="card"><h3>${title}</h3><table><tbody>
+    ${list.filter(f=>fmt(f)>0).map((f,i)=>`<tr><td>${i+1}</td><td>${f.name}</td><td><b>${fmt(f)}</b></td></tr>`).join('')||'<tr><td class="muted">Sin datos aún</td></tr>'}
+  </tbody></table></div>`;
+  return `
+  <div class="card"><h2>Estadísticas de la liga</h2>
+  <p class="muted">${STATE.events.filter(e=>e.status==='completed').length} eventos celebrados · ${STATE.fighters.reduce((a,f)=>a+f.record.wins,0)} combates resueltos</p></div>
+  ${block('Más victorias',topWins,'wins',f=>f.record.wins)}
+  ${block('Más KO/TKO',topKO,'koWins',f=>f.record.koWins)}
+  ${block('Más sumisiones',topSub,'subWins',f=>f.record.subWins)}
+  ${block('Más Pelea de la Noche',topFOTN,'fightOfNight',f=>f.bonuses.fightOfNight)}
+  ${block('Más Actuación de la Noche',topPOTN,'performanceOfNight',f=>f.bonuses.performanceOfNight)}
+  `;
+}
+
+/* ====================== ACTIVIDAD ====================== */
+function tplActivity(){
+  const list = STATE.fighters.filter(f=>f.status!=='retired').map(f=>{
+    let lastDate=null;
+    if(f.lastEventSeq!=null){
+      const ev = STATE.events.find(e=>e.seq===f.lastEventSeq && e.status==='completed');
+      if(ev) lastDate=ev.date;
+    }
+    const daysSince = lastDate? Math.round((new Date(STATE.meta.currentDate)-new Date(lastDate))/86400000) : null;
+    return {f, lastDate, daysSince};
+  }).sort((a,b)=>(b.daysSince??99999)-(a.daysSince??99999));
+  return `<div class="card"><h2>Actividad de peleadores</h2>
+  <p class="muted">Ordenado de más inactivo a más activo. Útil para saber a quién volver a contratar.</p>
+  <table><thead><tr><th>Nombre</th><th>Última pelea</th><th>Días sin pelear</th></tr></thead><tbody>
+  ${list.map(x=>`<tr class="clickable" data-id="${x.f.id}"><td>${x.f.name}${x.f.status==='injured'?' 🩹':''}</td><td>${x.lastDate?fmtDate(x.lastDate):'Nunca'}</td><td>${x.daysSince??'-'}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+
+/* ====================== HALL OF FAME ====================== */
+function tplHof(){
+  const hofMembers = STATE.fighters.filter(f=>f.hof).sort((a,b)=>goatScore(b)-goatScore(a));
+  const goatList = STATE.fighters.slice().sort((a,b)=>goatScore(b)-goatScore(a)).slice(0,20);
+  return `
+  <div class="card"><h2>🏛 Hall of Fame</h2>
+  ${hofMembers.length? hofMembers.map(f=>`<div class="fightcard-item clickable" data-id="${f.id}"><b>${f.name}</b> <span class="muted">${f.record.wins}-${f.record.losses}</span> · GOAT score: ${goatScore(f)}</div>`).join(''):'<p class="muted">Aún no hay miembros. Indúcelos desde el Editor.</p>'}
+  </div>
+  <div class="card"><h3>Ranking GOAT (activos y retirados)</h3>
+  <table><thead><tr><th>#</th><th>Nombre</th><th>Récord</th><th>Score</th></tr></thead><tbody>
+  ${goatList.map((f,i)=>`<tr class="clickable" data-id="${f.id}"><td>${i+1}</td><td>${f.name}${f.status==='retired'?' (ret.)':''}${f.hof?' 🏛':''}</td><td>${f.record.wins}-${f.record.losses}</td><td>${goatScore(f)}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+function bindHof(){ document.querySelectorAll('[data-id]').forEach(el=> el.onclick=()=>openFighterModal(el.dataset.id)); }
+
+/* ====================== EDITOR ====================== */
+function tplEditor(){
+  const f = UI.selectedFighter? STATE.fighters.find(x=>x.id===UI.selectedFighter): null;
+  return `
+  <div class="card">
+    <h2>🛠 Editor</h2>
+    <p class="muted">Edita cualquier dato del juego. También tienes un editor JSON completo más abajo por si necesitas algo no cubierto por los formularios.</p>
+  </div>
+
+  <div class="card">
+    <h3>Seleccionar peleador</h3>
+    <select id="editFighterSel"><option value="">-- Nuevo peleador --</option>
+      ${STATE.fighters.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(x=>`<option value="${x.id}" ${f&&f.id===x.id?'selected':''}>${x.name}</option>`).join('')}
+    </select>
+  </div>
+
+  <div class="card" id="fighterForm">${tplFighterForm(f)}</div>
+
+  <div class="card">
+    <h3>Eventos</h3>
+    <select id="delEventSel"><option value="">-- Selecciona evento --</option>
+      ${STATE.events.map(e=>`<option value="${e.id}">${e.name} (${e.status})</option>`).join('')}
+    </select>
+    <button class="btn danger full" id="delEventBtn">Eliminar evento seleccionado</button>
+  </div>
+
+  <div class="card">
+    <h3>JSON completo (avanzado)</h3>
+    <p class="muted">Edita el estado completo del juego en bruto. Pulsa "Aplicar JSON" para cargarlo.</p>
+    <textarea class="code" id="rawJson">${JSON.stringify(STATE,null,1)}</textarea>
+    <div class="row">
+      <button class="btn full" id="applyJson">Aplicar JSON</button>
+      <button class="btn full" id="refreshJson">Refrescar vista</button>
+    </div>
+  </div>
+  `;
+}
+
+function tplFighterForm(f){
+  const blank = {name:'',nickname:'',gender:'M',country:'',dob:'2000-01-01',debut:'2020-01-01',division:'M_LIGHT',
+    stats:{power:60,striking:60,wrestlingOff:60,wrestlingDef:60,ground:60,cardio:60,chin:60},
+    longevity:100, status:'active', record:{wins:0,losses:0,draws:0,nc:0,koWins:0,subWins:0,decWins:0,koLosses:0,subLosses:0,decLosses:0}, hof:false};
+  const d = f||blank;
+  return `
+  <h3>${f?('Editando: '+f.name):'Nuevo peleador'}</h3>
+  <label>Nombre</label><input id="fld_name" value="${d.name}">
+  <label>Apodo</label><input id="fld_nick" value="${d.nickname||''}">
+  <div class="row">
+    <div><label>Género</label><select id="fld_gender"><option value="M" ${d.gender==='M'?'selected':''}>M</option><option value="F" ${d.gender==='F'?'selected':''}>F</option></select></div>
+    <div><label>País</label><input id="fld_country" value="${d.country||''}"></div>
+  </div>
+  <div class="row">
+    <div><label>Nacimiento</label><input type="date" id="fld_dob" value="${d.dob}"></div>
+    <div><label>Debut</label><input type="date" id="fld_debut" value="${d.debut}"></div>
+  </div>
+  <label>Categoría de peso</label>
+  <select id="fld_division">${DIVISIONS.map(dv=>`<option value="${dv.id}" ${d.division===dv.id?'selected':''}>${divName(dv.id)}</option>`).join('')}</select>
+  <label>Estado</label>
+  <select id="fld_status">
+    <option value="active" ${d.status==='active'?'selected':''}>Activo</option>
+    <option value="injured" ${d.status==='injured'?'selected':''}>Lesionado</option>
+    <option value="retired" ${d.status==='retired'?'selected':''}>Retirado</option>
+  </select>
+  <h4>Atributos</h4>
+  <div class="grid2">
+    ${STAT_KEYS.map(([k,label])=>`<div><label>${label}</label><input type="number" min="1" max="99" id="fld_stat_${k}" value="${d.stats[k]}"></div>`).join('')}
+  </div>
+  <label>Longevidad (0-100)</label><input type="number" min="0" max="100" id="fld_longevity" value="${d.longevity}">
+  <h4>Récord</h4>
+  <div class="grid3">
+    <div><label>Victorias</label><input type="number" id="fld_w" value="${d.record.wins}"></div>
+    <div><label>Derrotas</label><input type="number" id="fld_l" value="${d.record.losses}"></div>
+    <div><label>Empates</label><input type="number" id="fld_dr" value="${d.record.draws}"></div>
+    <div><label>KO Victorias</label><input type="number" id="fld_kow" value="${d.record.koWins}"></div>
+    <div><label>SUB Victorias</label><input type="number" id="fld_subw" value="${d.record.subWins}"></div>
+    <div><label>DEC Victorias</label><input type="number" id="fld_decw" value="${d.record.decWins}"></div>
+  </div>
+  <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="fld_hof" style="width:auto" ${d.hof?'checked':''}> Miembro del Hall of Fame</label>
+  <div class="row" style="margin-top:8px">
+    <button class="btn primary full" id="saveFighterBtn">${f?'Guardar cambios':'Crear peleador'}</button>
+    ${f?'<button class="btn danger full" id="deleteFighterBtn">Eliminar peleador</button>':''}
+  </div>
+  `;
+}
+
+function bindEditor(){
+  document.getElementById('editFighterSel').onchange=e=>{ UI.selectedFighter=e.target.value||null; render(); };
+  const form=()=>document.getElementById('fighterForm');
+  document.getElementById('saveFighterBtn').onclick=()=>{
+    const get=id=>document.getElementById(id).value;
+    const stats={}; STAT_KEYS.forEach(([k])=> stats[k]=clamp(parseInt(document.getElementById('fld_stat_'+k).value)||50,1,99));
+    let f = UI.selectedFighter? STATE.fighters.find(x=>x.id===UI.selectedFighter): null;
+    if(!f){ f = {id:uid('F'), fightHistory:[], titleReigns:[], bonuses:{fightOfNight:0,performanceOfNight:0}, injury:{active:false,untilDate:null,note:''}, lastEventSeq:null, rankScore:0}; STATE.fighters.push(f); }
+    f.name=get('fld_name'); f.nickname=get('fld_nick')||null; f.gender=get('fld_gender'); f.country=get('fld_country');
+    f.dob=get('fld_dob'); f.debut=get('fld_debut'); f.division=get('fld_division'); f.status=get('fld_status');
+    f.stats=stats; f.longevity=clamp(parseInt(get('fld_longevity'))||0,0,100);
+    f.record = {
+      wins: parseInt(get('fld_w'))||0, losses: parseInt(get('fld_l'))||0, draws: parseInt(get('fld_dr'))||0, nc: f.record? f.record.nc:0,
+      koWins: parseInt(get('fld_kow'))||0, subWins: parseInt(get('fld_subw'))||0, decWins: parseInt(get('fld_decw'))||0,
+      koLosses: f.record?f.record.koLosses:0, subLosses: f.record?f.record.subLosses:0, decLosses: f.record?f.record.decLosses:0
+    };
+    f.hof = document.getElementById('fld_hof').checked;
+    if(f.status==='injured' && !f.injury.active){ f.injury={active:true, untilDate:addDays(STATE.meta.currentDate,60), note:'Editado manualmente'}; }
+    if(f.status!=='injured'){ f.injury.active=false; }
+    saveLocal(); UI.selectedFighter=f.id; render(); toast('Peleador guardado');
+  };
+  const delBtn=document.getElementById('deleteFighterBtn');
+  if(delBtn) delBtn.onclick=()=>{
+    if(!confirm('¿Eliminar este peleador definitivamente?')) return;
+    STATE.fighters = STATE.fighters.filter(x=>x.id!==UI.selectedFighter);
+    UI.selectedFighter=null; saveLocal(); render(); toast('Peleador eliminado');
+  };
+  document.getElementById('delEventBtn').onclick=()=>{
+    const id=document.getElementById('delEventSel').value; if(!id) return;
+    STATE.events = STATE.events.filter(x=>x.id!==id); saveLocal(); render(); toast('Evento eliminado');
+  };
+  document.getElementById('applyJson').onclick=()=>{
+    try{
+      const parsed = JSON.parse(document.getElementById('rawJson').value);
+      STATE = parsed; saveLocal(); render(); toast('Estado aplicado desde JSON');
+    }catch(e){ toast('JSON inválido: '+e.message, 4000); }
+  };
+  document.getElementById('refreshJson').onclick=()=> render();
+}
+
+/* ====================== AJUSTES / GITHUB ====================== */
+function tplSettings(){
+  const cfg=getCfg();
+  return `
+  <div class="card">
+    <h2>☁️ Guardado en GitHub</h2>
+    <p class="muted">Configura tu repositorio y un Personal Access Token (con permiso "repo" / contenido) para guardar y cargar tu partida en un fichero JSON del repo. El token solo se guarda en este dispositivo (localStorage), nunca se sube a ningún sitio.</p>
+    <label>Usuario/Organización</label><input id="cfgOwner" value="${cfg.owner||''}" placeholder="tu-usuario">
+    <label>Repositorio</label><input id="cfgRepo" value="${cfg.repo||''}" placeholder="ufc-owner-sim">
+    <label>Rama</label><input id="cfgBranch" value="${cfg.branch||'main'}">
+    <label>Ruta del fichero</label><input id="cfgPath" value="${cfg.path||'data/state.json'}">
+    <label>Personal Access Token</label><input id="cfgToken" type="password" value="${cfg.token||''}" placeholder="ghp_xxxxx...">
+    <button class="btn full" id="saveCfg">Guardar configuración</button>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary full" id="pushBtn">⬆ Guardar partida en GitHub</button>
+      <button class="btn full" id="pullBtn">⬇ Cargar partida desde GitHub</button>
+    </div>
+    <p class="muted" id="ghStatus"></p>
+  </div>
+  <div class="card">
+    <h3>Datos locales</h3>
+    <div class="row">
+      <button class="btn full" id="newGameBtn">🔄 Nueva partida (resetear con 2 por categoría)</button>
+      <button class="btn full" id="exportBtn">📤 Exportar JSON (descargar)</button>
+    </div>
+  </div>`;
+}
+function bindSettings(){
+  document.getElementById('saveCfg').onclick=()=>{
+    setCfg({owner:val('cfgOwner'),repo:val('cfgRepo'),branch:val('cfgBranch')||'main',path:val('cfgPath')||'data/state.json',token:val('cfgToken')});
+    toast('Configuración guardada');
+  };
+  function val(id){return document.getElementById(id).value.trim();}
+  document.getElementById('pushBtn').onclick=async()=>{
+    const cfg=getCfg(); const status=document.getElementById('ghStatus');
+    if(!cfg.owner||!cfg.repo||!cfg.token){ status.textContent='Falta configuración (usuario/repo/token).'; return; }
+    status.textContent='Guardando...';
+    try{
+      const apiUrl=`https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}`;
+      let sha=null;
+      const getRes = await fetch(apiUrl+`?ref=${cfg.branch}`, {headers:{Authorization:`token ${cfg.token}`}});
+      if(getRes.status===200){ const j=await getRes.json(); sha=j.sha; }
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(STATE,null,1))));
+      const putRes = await fetch(apiUrl, {
+        method:'PUT', headers:{Authorization:`token ${cfg.token}`, 'Content-Type':'application/json'},
+        body: JSON.stringify({message:`Guardado partida ${STATE.meta.currentDate}`, content, sha: sha||undefined, branch:cfg.branch})
+      });
+      if(putRes.ok){ status.textContent='✅ Guardado correctamente en GitHub.'; toast('Partida guardada en GitHub'); }
+      else { const e=await putRes.json(); status.textContent='❌ Error: '+(e.message||putRes.status); }
+    }catch(e){ status.textContent='❌ Error de red: '+e.message; }
+  };
+  document.getElementById('pullBtn').onclick=async()=>{
+    const cfg=getCfg(); const status=document.getElementById('ghStatus');
+    if(!cfg.owner||!cfg.repo){ status.textContent='Falta configuración (usuario/repo).'; return; }
+    status.textContent='Cargando...';
+    try{
+      const raw=`https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch}/${cfg.path}`;
+      const res = await fetch(raw+`?t=${Date.now()}`);
+      if(!res.ok){ status.textContent='❌ No se encontró el fichero en el repo.'; return; }
+      const json = await res.json();
+      STATE=json; saveLocal(); render();
+      status.textContent='✅ Partida cargada desde GitHub.'; toast('Partida cargada');
+    }catch(e){ status.textContent='❌ Error: '+e.message; }
+  };
+  document.getElementById('newGameBtn').onclick=()=>{
+    if(!confirm('Esto borrará tu partida actual y generará 2 peleadores por categoría. ¿Continuar?')) return;
+    STATE=freshState(); seedFighters(); render(); toast('Nueva partida generada');
+  };
+  document.getElementById('exportBtn').onclick=()=>{
+    const blob=new Blob([JSON.stringify(STATE,null,1)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ufc_state.json'; a.click();
+  };
+}
+
+/* ====================== INIT ====================== */
+async function init(){
+  const local = loadLocal();
+  if(local){ STATE=local; }
+  else {
+    STATE=freshState();
+    seedFighters();
+  }
+  refreshRankings();
+  render();
+}
+init();
+</script>
+</body>
+</html>
