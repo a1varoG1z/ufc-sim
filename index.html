@@ -286,6 +286,40 @@ const REAL_FIGHTERS = [
 const TIER_RANGES = {
   legend:[78,95], elite:[74,90], contender:[65,82], veteran:[60,78]
 };
+const TIER_FIGHTS = { legend:[28,45], elite:[16,24], contender:[10,18], veteran:[18,28] };
+const TIER_WINRATE = { legend:[0.78,0.92], elite:[0.65,0.82], contender:[0.50,0.68], veteran:[0.45,0.62] };
+
+function distribute(total, weights){
+  // reparte "total" en partes proporcionales a "weights" (array), redondeando y ajustando el resto a la última parte
+  const sum = weights.reduce((a,b)=>a+b,0)||1;
+  const parts = weights.map(w=>Math.floor(total*(w/sum)));
+  let used = parts.reduce((a,b)=>a+b,0);
+  let i=0;
+  while(used<total){ parts[i%parts.length]++; used++; i++; }
+  return parts;
+}
+
+function generateCareerRecord(stats, tier){
+  const [fMin,fMax] = TIER_FIGHTS[tier]||TIER_FIGHTS.contender;
+  const [wMin,wMax] = TIER_WINRATE[tier]||TIER_WINRATE.contender;
+  const fights = randi(fMin,fMax);
+  const winRate = rand(wMin,wMax);
+  const draws = Math.random()<0.06? 1:0;
+  const wins = Math.round((fights-draws)*winRate);
+  const losses = Math.max(0, fights-draws-wins);
+
+  const koW = stats.power*0.6+stats.striking*0.4;
+  const subW = stats.ground*0.8+stats.wrestlingOff*0.2;
+  const decW = 35;
+  const [winKo,winSub,winDec] = distribute(wins, [koW,subW,decW]);
+
+  const koL = (100-stats.chin)*0.7+10;
+  const subL = (100-stats.wrestlingDef)*0.5+10;
+  const decL = 30;
+  const [lossKo,lossSub,lossDec] = distribute(losses, [koL,subL,decL]);
+
+  return {wins,losses,draws,nc:0,koWins:winKo,subWins:winSub,decWins:winDec,koLosses:lossKo,subLosses:lossSub,decLosses:lossDec};
+}
 
 function makeRealFighter(rf){
   const range = TIER_RANGES[rf.tier]||[60,80];
@@ -297,13 +331,15 @@ function makeRealFighter(rf){
     dob:rf.dob, debut:rf.debut, division:rf.division, stats, longevity,
     status: rf.status==='retired'?'retired':'active',
     injury:{active:false, untilDate:null, note:''},
-    record:{wins:0,losses:0,draws:0,nc:0,koWins:0,subWins:0,decWins:0,koLosses:0,subLosses:0,decLosses:0},
-    bonuses:{fightOfNight:0, performanceOfNight:0},
+    record: generateCareerRecord(stats, rf.tier),
+    bonuses:{fightOfNight:randi(0,STAT_KEYS_BONUS_CAP(rf.tier)), performanceOfNight:randi(0,STAT_KEYS_BONUS_CAP(rf.tier))},
     titleReigns:[], fightHistory:[], lastEventSeq:null,
     hof: rf.tier==='legend' && rf.status==='retired',
-    rankScore:0
+    rankScore:0,
+    _tier: rf.tier
   };
 }
+function STAT_KEYS_BONUS_CAP(tier){ return {legend:9, elite:5, contender:2, veteran:3}[tier]||1; }
 
 function seedFighters(){
   STATE.fighters = REAL_FIGHTERS.map(makeRealFighter);
@@ -317,8 +353,51 @@ function seedFighters(){
     id: uid('T'), name: `Cinturón de ${divName(d.id)}`, divisionId:d.id, holderId:null, isInterim:false, history:[]
   }));
   STATE.titles.push({id:uid('T'), name:'Cinturón BMF', divisionId:null, holderId:null, isInterim:false, history:[]});
+
+  assignTitleHistory();
+
   logEvent(`Liga inicializada con ${STATE.fighters.length} peleadores (roster real + generados).`);
   saveLocal();
+}
+
+function assignTitleHistory(){
+  DIVISIONS.forEach(div=>{
+    const title = STATE.titles.find(t=>t.divisionId===div.id);
+    if(!title) return;
+    const pool = STATE.fighters.filter(f=>f.division===div.id);
+    // ex-campeones: leyendas retiradas -> reinado cerrado con defensas
+    const retiredLegends = pool.filter(f=>f._tier==='legend' && f.status==='retired')
+      .sort((a,b)=>(b.record.wins-b.record.losses)-(a.record.wins-a.record.losses));
+    retiredLegends.slice(0,2).forEach((f,idx)=>{
+      const defenses = randi(1,7);
+      const wonDate = addDays(STATE.meta.currentDate, -randi(1200,3600));
+      const lostDate = addDays(wonDate, randi(180,900));
+      f.titleReigns.push({titleId:title.id, wonDate, lostDate, defenses});
+      title.history.push({fighterId:f.id, wonEventId:null, wonDate});
+    });
+    // campeón actual: mejor activo legend/elite por rating
+    const champCandidates = pool.filter(f=>f.status==='active' && (f._tier==='legend'||f._tier==='elite'))
+      .sort((a,b)=>overallRating(b)-overallRating(a));
+    if(champCandidates.length){
+      const champ = champCandidates[0];
+      const defenses = randi(0, champ._tier==='legend'?6:3);
+      const wonDate = addDays(STATE.meta.currentDate, -randi(60,700));
+      champ.titleReigns.push({titleId:title.id, wonDate, lostDate:null, defenses});
+      title.holderId = champ.id; title.isInterim=false;
+      title.history.push({fighterId:champ.id, wonEventId:null, wonDate});
+    }
+  });
+  // BMF: a un peleador activo destacado de welter o ligero
+  const bmf = STATE.titles.find(t=>t.name.includes('BMF'));
+  const bmfPool = STATE.fighters.filter(f=>['M_WELTER','M_LIGHT'].includes(f.division) && f.status==='active' && (f._tier==='legend'||f._tier==='elite'))
+    .sort((a,b)=>overallRating(b)-overallRating(a));
+  if(bmf && bmfPool.length){
+    const holder = bmfPool[0];
+    const wonDate = addDays(STATE.meta.currentDate, -randi(60,500));
+    holder.titleReigns.push({titleId:bmf.id, wonDate, lostDate:null, defenses:randi(0,2)});
+    bmf.holderId = holder.id;
+    bmf.history.push({fighterId:holder.id, wonEventId:null, wonDate});
+  }
 }
 
 /* ====================== PERSISTENCIA LOCAL ====================== */
